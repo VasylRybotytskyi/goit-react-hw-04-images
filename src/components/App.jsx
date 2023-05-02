@@ -14,14 +14,14 @@ export const App = () => {
   const [totalHits, setTotalHits] = useState(0);
   const [page, setPage] = useState(1);
 
-  const handleSubmit = async searchTerm => {
-    if (searchTerm.trim() === '') {
+  const handleSubmit = async inputData => {
+    if (inputData.trim() === '') {
       Notiflix.Notify.info('You cannot search by empty field, try again.'); //Перевірка чи рядок не пустий
       return;
     }
     setStatus('pending');
     try {
-      const { totalHits, hits } = await fetchImages(searchTerm, 1);
+      const { totalHits, hits } = await fetchImages(inputData, 1);
       if (hits.length < 1) {
         setStatus('idle');
         Notiflix.Notify.failure(
@@ -29,7 +29,7 @@ export const App = () => {
         );
       } else {
         setItems(hits);
-        setInputData(searchTerm);
+        setInputData(inputData);
         setTotalHits(totalHits);
         setPage(1);
         setStatus('resolved');
