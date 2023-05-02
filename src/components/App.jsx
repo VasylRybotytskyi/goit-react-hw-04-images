@@ -13,7 +13,7 @@ export const App = () => {
   const [status, setStatus] = useState('idle');
   const [totalHits, setTotalHits] = useState(0);
   const [page, setPage] = useState(1);
-
+  //Пошук відбувається за inputData, якщо він не пустий. Якщо hits порожній, статус встановлюється в idle, інакше - в resolved, а стан items, inputData, totalHits, page заповнюються з об'єкту fetchImages.
   const handleSubmit = async inputData => {
     if (inputData.trim() === '') {
       Notiflix.Notify.info('You cannot search by empty field, try again.'); //Перевірка чи рядок не пустий
@@ -38,7 +38,7 @@ export const App = () => {
       setStatus('rejected');
     }
   };
-
+  //Ця функція отримує наступну сторінку зображень з API, додає їх до поточних елементів та збільшує номер поточної сторінки. Якщо є помилка, статус встановлюється на "rejected".
   const onNextPage = async () => {
     setStatus('pending');
     try {
