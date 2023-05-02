@@ -1,4 +1,4 @@
-import React, { Component } from 'react';
+import { useState } from 'react';
 import { fetchImages } from './fetchImages/fetchImages';
 import Notiflix from 'notiflix';
 import { Searchbar } from './Searchbar/Searchbar';
@@ -7,95 +7,107 @@ import { Loader } from './Loader/Loader';
 import { ImageGallery } from './ImageGallery/ImageGallery';
 import { GlobalStyle } from './GlobaStyle';
 
-let page = 1;
+export const App = () => {
+  const [inputData, setInputData] = useState('');
+  const [items, setItems] = useState([]);
+  const [status, setStatus] = useState('idle');
+  const [totalHits, setTotalHits] = useState(0);
+  const [page, setPage] = useState(1);
 
-export class App extends Component {
-  state = {
-    inputData: '',
-    items: [], //масив який містить обєкти з даними про зобаження
-
-    status: 'idle',
-    totalHits: 0, //загальна кількість забражень
-  };
-
-  handleSubmit = async inputData => {
+  const handleSubmit = async inputData => {
     if (inputData.trim() === '') {
       Notiflix.Notify.info('You cannot search by empty field, try again.'); //Перевірка чи рядок не пустий
       return;
     }
-    this.setState({ status: 'pending' });
+    setStatus('pending');
     try {
       const { totalHits, hits } = await fetchImages(inputData, page);
       if (hits.length < 1) {
-        this.setState({ status: 'idle' });
+        setStatus('idle');
         Notiflix.Notify.failure(
           'Sorry, there are no images matching your search query. Please try again.'
         );
       } else {
-        this.setState({
-          items: hits,
-          inputData,
-          totalHits,
-          status: 'resolved',
-        });
+        setItems(hits);
+        setInputData(inputData);
+        setTotalHits(totalHits);
+        setStatus('resolved');
       }
     } catch (error) {
-      this.setState({ status: 'rejected' });
+      setStatus('rejected');
     }
   };
 
-  onNextPage = async () => {
-    this.setState({ status: 'pending' });
+  //   setStatus('pending');
+  //   setPage(1);
 
+  //   try {
+  //     const { totalHits, hits } = await fetchImages(inputData, 1);
+  //     if (hits.length < 1) {
+  //       setStatus('idle');
+  //       Notiflix.Notify.failure(
+  //         'Sorry, there are no images matching your search query. Please try again.'
+  //       );
+  //     } else {
+  //       setItems(hits);
+  //       setInputData(inputData);
+  //       setTotalHits(totalHits);
+  //       setStatus('resolved');
+  //     }
+  //   } catch (error) {
+  //     setStatus('rejected');
+  //   }
+  // };
+  const onNextPage = async () => {
+    setStatus('pending');
     try {
-      const { hits } = await fetchImages(this.state.inputData, (page += 1));
-      this.setState(prevState => ({
-        items: [...prevState.items, ...hits],
-        status: 'resolved',
-      }));
+      const { hits } = await fetchImages(inputData, page + 1);
+      setItems(prevState => [...prevState, ...hits]);
+      setPage(prevState => prevState + 1);
+      setStatus('resolved');
     } catch (error) {
-      this.setState({ status: 'rejected' });
+      setStatus('rejected');
     }
   };
-  render() {
-    const { totalHits, status, items } = this.state;
-    if (status === 'idle') {
-      return (
-        <div>
-          <Searchbar onSubmit={this.handleSubmit} />
-        </div>
-      );
-    }
-    if (status === 'pending') {
-      return (
-        <div>
-          <GlobalStyle />
-          <Searchbar onSubmit={this.handleSubmit} />
-          <ImageGallery page={page} items={items} />
-          <Loader />
-          {totalHits > 12 && <Button onClick={this.onNextPage} />}
-        </div>
-      );
-    }
-    if (status === 'rejected') {
-      return (
-        <div>
-          <Searchbar onSubmit={this.handleSubmit} />
-          <p>Something wrong, try later</p>
-        </div>
-      );
-    }
-    if (status === 'resolved') {
-      return (
-        <div>
-          <GlobalStyle />
-          <Searchbar onSubmit={this.handleSubmit} />
-          <ImageGallery page={page} items={items} />
-          {totalHits > 12 && totalHits > items.length && (
-            <Button onClick={this.onNextPage} />
-          )}
-        </div>
-      );
-    }
-  }
+};
+
+let content;
+switch (status) {
+  case 'idle':
+    content = <Searchbar onSubmit={handleSubmit} />;
+    break;
+  case 'pending':
+    content = (
+      <>
+        <GlobalStyle />
+        <Searchbar onSubmit={handleSubmit} />
+        <ImageGallery page={page} items={items} />
+        <Loader />
+        {totalHits > 12 && <Button onClick={onNextPage} />}
+      </>
+    );
+
+    break;
+  case 'rejected':
+    content = (
+      <>
+        <Searchbar onSubmit={handleSubmit} />
+        <p>Something wrong, try later</p>
+      </>
+    );
+    break;
+  case 'resolved':
+    content = (
+      <>
+        <GlobalStyle />
+        <Searchbar onSubmit={handleSubmit} />
+        <ImageGallery page={page} items={items} />
+        {totalHits > 12 && totalHits > items.length && (
+          <Button onClick={onNextPage} />
+        )}
+      </>
+    );
+    break;
+  default:
+    content = null;
 }
